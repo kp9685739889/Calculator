@@ -145,9 +145,13 @@ body.dark .features span{background:#2a2a4a}
 let expr = "", ans = 0, history = JSON.parse(localStorage.getItem('calcHist')||'[]');
 let mode = 'std';
 
-// Safe Math Parser (No eval)
+// Safe Math Parser (Degrees mode + Auto-close parentheses + No eval)
 function safeEvaluate(input) {
-  const clean = input.replace(/÷/g, '/').replace(/×/g, '*').replace(/\s+/g, '');
+  let clean = input.replace(/÷/g, '/').replace(/×/g, '*').replace(/\s+/g, '');
+  const openCount = (clean.match(/\(/g) || []).length;
+  const closeCount = (clean.match(/\)/g) || []).length;
+  if (openCount > closeCount) clean += ')'.repeat(openCount - closeCount);
+
   const tokens = clean.match(/(?:Math\.(?:sqrt|sin|cos|tan|log10|PI|E)|\*\*|\d*\.?\d+|[+\-*/%()])/g);
   if (!tokens || tokens.join('') !== clean) throw new Error('Invalid expression');
 
@@ -210,10 +214,11 @@ function safeEvaluate(input) {
       if (consume() !== '(') throw new Error('Expected (');
       const arg = parseExpression();
       if (consume() !== ')') throw new Error('Expected )');
+      const rad = arg * (Math.PI / 180);
       if (tok === 'Math.sqrt') return Math.sqrt(arg);
-      if (tok === 'Math.sin') return Math.sin(arg);
-      if (tok === 'Math.cos') return Math.cos(arg);
-      if (tok === 'Math.tan') return Math.tan(arg);
+      if (tok === 'Math.sin') return Math.sin(rad);
+      if (tok === 'Math.cos') return Math.cos(rad);
+      if (tok === 'Math.tan') return Math.tan(rad);
       if (tok === 'Math.log10') return Math.log10(arg);
     }
     if (/^\d*\.?\d+$/.test(tok)) {
